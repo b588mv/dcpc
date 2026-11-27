@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>O SEM SOMBRANCELHA</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+  }
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: #0b0e14;
+    color: #f1f5f9;
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #game-wrapper {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    max-width: 1280px;
+    max-height: 720px;
+    aspect-ratio: 16 / 9;
+    background: #121722;
+    border: 2px solid #263042;
+    border-radius: 10px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* HUD */
+  #hud {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    right: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 5;
+    gap: 10px;
+  }
+  .hud-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(13, 18, 28, 0.78);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    padding: 7px 13px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    pointer-events: auto;
+  }
+  .game-title-badge {
+    color: #fbbf24;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+  .stat-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #e2e8f0;
+  }
+  .stat-label {
+    color: #94a3b8;
+    font-weight: 500;
+  }
+  .progress-wrap {
+    width: 90px;
+    height: 8px;
+    background: #1e293b;
+    border-radius: 99px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  #progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #f97316, #fbbf24);
+    transition: width 0.12s linear;
+  }
+  .hud-btn {
+    background: #1e293b;
+    color: #f8fafc;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .hud-btn:hover {
+    background: #334155;
+  }
+  .hud-btn:active {
+    transform: scale(0.96);
+  }
+
+  /* Cooldown Chapinha indicator */
+  #dash-indicator {
+    position: absolute;
+    bottom: 14px;
+    left: 14px;
+    background: rgba(13, 18, 28, 0.8);
+    border: 1px solid rgba(251, 146, 60, 0.35);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 5;
+    pointer-events: none;
+  }
+  #dash-bar-bg {
+    width: 72px;
+    height: 7px;
+    background: #1e293b;
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  #dash-bar-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #ef4444, #f97316, #fde047);
+  }
+
+  /* Overlays */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(9, 13, 22, 0.86);
+    backdrop-filter: blur(6px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    z-index: 20;
+    transition: opacity 0.2s ease;
+  }
+  .overlay.hidden {
+    display: none;
+  }
+  .card {
+    background: #131a28;
+    border: 1px solid #2e3b52;
+    border-radius: 14px;
+    padding: 28px 34px;
+    max-width: 560px;
+    width: 100%;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+  }
+  h1 {
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    color: #fbbf24;
+    margin-bottom: 8px;
+    text-shadow: 0 3px 14px rgba(251, 191, 36, 0.28);
+  }
+  h2 {
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
+  .subtitle {
+    color: #cbd5e1;
+    font-size: 14.5px;
+    line-height: 1.5;
+    margin-bottom: 18px;
+  }
+  .controls-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px 14px;
+    text-align: left;
+    background: #0d131f;
+    border: 1px solid #222d40;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+  }
+  .key-cap {
+    display: inline-block;
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: monospace;
+    font-weight: 700;
+    color: #fbbf24;
+    font-size: 12px;
+  }
+  .primary-btn {
+    background: linear-gradient(135deg, #f59e0b, #ea580c);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 26px;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(234, 88, 12, 0.4);
+    transition: transform 0.12s, filter 0.15s;
+  }
+  .primary-btn:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+  .primary-btn:active {
+    transform: translateY(1px);
+  }
+  .secondary-link-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+    background: #1e293b;
+    color: #38bdf8;
+    border: 1px solid #0284c7;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 13.5px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .secondary-link-btn:hover {
+    background: #0f2942;
+  }
+  .death-url-box {
+    margin: 14px 0 18px;
+    padding: 12px;
+    background: #0b101a;
+    border: 1px dashed #475569;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #94a3b8;
+  }
+  .death-url-box a {
+    color: #38bdf8;
+    font-weight: 700;
+    word-break: break-all;
+  }
+  .stats-summary {
+    display: flex;
+    justify-content: space-around;
+    background: #0d131f;
+    border: 1px solid #243044;
+    border-radius: 10px;
+    padding: 14px;
+    margin: 16px 0 22px;
+  }
+  .stats-summary div span {
+    display: block;
+    font-size: 12px;
+    color: #94a3b8;
+  }
+  .stats-summary div strong {
+    font-size: 20px;
+    color: #fbbf24;
+  }
+  .btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+  }
+</style>
+</head>
+<body>
+<div id="game-wrapper">
+  <canvas id="gameCanvas" width="1280" height="720"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-group">
+      <span class="game-title-badge">O SEM SOMBRANCELHA</span>
+      <span class="stat-pill"><span class="stat-label">Mortes:</span> <span id="hud-deaths">0</span></span>
+      <span class="stat-pill"><span class="stat-label">Checkpoint:</span> <span id="hud-cp">1 / 6</span></span>
+    </div>
+    <div class="hud-group">
+      <span class="stat-pill"><span class="stat-label">Tempo:</span> <span id="hud-time">00:00.0</span></span>
+      <span class="stat-pill">
+        <span class="stat-label">Progresso:</span>
+        <div class="progress-wrap"><div id="progress-bar"></div></div>
+        <span id="hud-pct">0%</span>
+      </span>
+      <button class="hud-btn" id="btn-sound" title="Alternar Áudio">Som: ON</button>
+      <button class="hud-btn" id="btn-restart-cp" title="Voltar ao Checkpoint (R)">Checkpoint (R)</button>
+    </div>
+  </div>
+
+  <!-- Indicador da Chapinha -->
+  <div id="dash-indicator">
+    <span style="color:#fb923c;font-weight:800;">CHAPINHA TÉRMICA [SHIFT / K / J]:</span>
+    <div id="dash-bar-bg"><div id="dash-bar-fill"></div></div>
+    <span id="dash-status" style="color:#fde047;font-weight:700;">PRONTA (220°C)</span>
+  </div>
+
+  <!-- Tela Inicial -->
+  <div id="start-overlay" class="overlay">
+    <div class="card">
+      <h1>O SEM SOMBRANCELHA</h1>
+      <p class="subtitle">
+        Guie <strong>Raul</strong> — armado com seus óculos de grau, fones brancos e sua fiel <strong>chapinha térmica a 220°C</strong> — por um percurso implacável. Nenhum fio de sobrancelha será encontrado aqui.
+      </p>
+      <div class="controls-grid">
+        <div><span class="key-cap">A</span> <span class="key-cap">D</span> ou <span class="key-cap">◄</span> <span class="key-cap">►</span> Mover</div>
+        <div><span class="key-cap">W</span> <span class="key-cap">▲</span> <span class="key-cap">Espaço</span> Pular (segure p/ alto)</div>
+        <div><span class="key-cap">Shift</span> / <span class="key-cap">K</span> / <span class="key-cap">J</span> Impulso Térmico (Chapinha)</div>
+        <div><span class="key-cap">R</span> Renascer no último Checkpoint</div>
+      </div>
+      <p style="font-size:12px;color:#94a3b8;margin-bottom:18px;">
+        Aviso: Morrer abre automaticamente uma aba aleatória entre Gartic Phone, SongBattle ou Redubla (com link direto na tela caso seu navegador bloqueie pop-ups).
+      </p>
+      <button class="primary-btn" id="btn-start">COMEÇAR JORNADA</button>
+    </div>
+  </div>
+
+  <!-- Tela de Morte -->
+  <div id="death-overlay" class="overlay hidden">
+    <div class="card">
+      <h2 style="color:#f87171;">RAUL FOI DE BASE!</h2>
+      <p class="subtitle" id="death-reason">Você caiu no abismo sem sobrancelhas.</p>
+      <div class="death-url-box">
+        <div>Site sorteado na morte:</div>
+        <a id="death-url-link" href="https://garticphone.com/pt" target="_blank" rel="noopener noreferrer">https://garticphone.com/pt</a>
+        <div id="popup-hint" style="margin-top:6px;font-size:11.5px;color:#fbbf24;">
+          Tentamos abrir em uma nova aba. Se o navegador bloqueou o pop-up, clique no botão azul abaixo!
+        </div>
+      </div>
+      <div class="btn-row">
+        <a id="death-open-btn" class="secondary-link-btn" href="https://garticphone.com/pt" target="_blank" rel="noopener noreferrer">
+          Abrir Site Sorteado ↗
+        </a>
+        <button class="primary-btn" id="btn-respawn" style="margin-top:12px;">
+          Continuar do Checkpoint (Espaço / Enter)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tela de Vitória -->
+  <div id="victory-overlay" class="overlay hidden">
+    <div class="card">
+      <h1 style="color:#4ade80;">VITÓRIA LENDÁRIA!</h1>
+      <p class="subtitle">
+        Raul atravessou todos os desafios com a testa impecavelmente lisa e a chapinha ainda pelando!
+      </p>
+      <div class="stats-summary">
+        <div><span>TEMPO TOTAL</span><strong id="win-time">00:00.0</strong></div>
+        <div><span>MORTES TOTAIS</span><strong id="win-deaths">0</strong></div>
+        <div><span>TEMPERATURA FINAL</span><strong>220°C</strong></div>
+      </div>
+      <button class="primary-btn" id="btn-play-again">Jogar Novamente do Zero</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  // Elementos HUD & Overlays
+  const hudDeaths = document.getElementById('hud-deaths');
+  const hudCp = document.getElementById('hud-cp');
+  const hudTime = document.getElementById('hud-time');
+  const hudPct = document.getElementById('hud-pct');
+  const progressBar = document.getElementById('progress-bar');
+  const dashBarFill = document.getElementById('dash-bar-fill');
+  const dashStatus = document.getElementById('dash-status');
+
+  const startOverlay = document.getElementById('start-overlay');
+  const deathOverlay = document.getElementById('death-overlay');
+  const victoryOverlay = document.getElementById('victory-overlay');
+  const deathReasonEl = document.getElementById('death-reason');
+  const deathUrlLink = document.getElementById('death-url-link');
+  const deathOpenBtn = document.getElementById('death-open-btn');
+  const popupHint = document.getElementById('popup-hint');
+
+  const DEATH_URLS = [
+    'https://garticphone.com/pt',
+    'https://songbattle.io/pt/',
+    'https://www.redubla.com.br/'
+  ];
+
+  // ==========================================
+  // SISTEMA DE ÁUDIO (Web Audio API puro)
+  // ==========================================
+  class SoundEngine {
+    constructor() {
+      this.ctx = null;
+      this.enabled = true;
+    }
+    init() {
+      if (!this.ctx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) this.ctx = new AudioCtx();
+      }
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+    }
+    toggle() {
+      this.enabled = !this.enabled;
+      return this.enabled;
+    }
+    playJump() {
+      if (!this.enabled) return;
+      this.init();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(210, now);
+      osc.frequency.exponentialRampToValueAtTime(520, now + 0.14);
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    }
+    playDash() {
+      if (!this.enabled) return;
+      this.init();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      // Chiado térmico + impulso grave
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(640, now);
+      osc.frequency.exponentialRampToValueAtTime(140, now + 0.18);
+      gain.gain.setValueAtTime(0.16, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.19);
+    }
+    playCheckpoint() {
+      if (!this.enabled) return;
+      this.init();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+        gain.gain.setValueAtTime(0.14, now + idx * 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.22);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + idx * 0.06);
+        osc.stop(now + idx * 0.06 + 0.23);
+      });
+    }
+    playEnemyBurn() {
+      if (!this.enabled) return;
+      this.init();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(300, now);
+      osc.frequency.exponentialRampToValueAtTime(90, now + 0.14);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    }
+    playDeath() {
+      if (!this.enabled) return;
+      this.init();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.linearRampToValueAtTime(75, now + 0.42);
+      gain.gain.setValueAtTime(0.24, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.44);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.45);
+    }
+    playVictory() {
+      if (!this.enabled) return;
+      this.init();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const notes = [523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5];
+      const times = [0, 0.1, 0.2, 0.3, 0.46, 0.6];
+      notes.forEach((freq, i) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + times[i]);
+        gain.gain.setValueAtTime(0.18, now + times[i]);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + times[i] + 0.28);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + times[i]);
+        osc.stop(now + times[i] + 0.3);
+      });
+    }
+  }
+  const sfx = new SoundEngine();
+
+  // ==========================================
+  // CONSTANTES DE FÍSICA E MUNDO
+  // ==========================================
+  const WORLD_WIDTH = 5600;
+  const WORLD_HEIGHT = 1350;
+  const GRAVITY = 1950;
+  const MAX_FALL_SPEED = 980;
+  const MOVE_ACCEL = 2900;
+  const MOVE_DECEL = 3200;
+  const AIR_ACCEL = 2100;
+  const MAX_RUN_SPEED = 330;
+  const JUMP_VELOCITY = -670;
+  const COYOTE_TIME = 0.11;       // 110ms de tolerância após sair da borda
+  const JUMP_BUFFER_TIME = 0.12;  // 120ms de buffer antes de tocar o chão
+  const DASH_SPEED = 690;
+  const DASH_DURATION = 0.16;
+  const DASH_COOLDOWN = 1.35;
+
+  // ==========================================
+  // ESTADO GLOBAL DO JOGO
+  // ==========================================
+  let gameState = 'START'; // START, PLAYING, DEAD, VICTORY
+  let deaths = 0;
+  let elapsedTime = 0;
+  let currentCheckpointIndex = 0;
+  let screenShake = 0;
+  let particles = [];
+  let projectiles = [];
+
+  // Controles
+  const keys = {
+    left: false,
+    right: false,
+    up: false,
+    dash: false
+  };
+  let jumpPressedThisFrame = false;
+  let jumpReleasedThisFrame = false;
+  let dashPressedThisFrame = false;
+
+  // ==========================================
+  // DEFINIÇÃO DO MAPA (5600 x 1350)
+  // Todos os saltos calculados:
+  // Pulo máx vertical ~ 115px (sem dash) e alcance horizontal ~ 230px (com dash ~ 340px)
+  // ==========================================
+  const checkpoints = [
+    { id: 0, x: 110,  y: 980,  name: '1 - Início Liso' },
+    { id: 1, x: 1160, y: 900,  name: '2 - Pontes Instáveis' },
+    { id: 2, x: 2220, y: 780,  name: '3 - Torre Térmica' },
+    { id: 3, x: 3260, y: 840,  name: '4 - Corredor dos Secadores' },
+    { id: 4, x: 4320, y: 720,  name: '5 - Abismo da Chapinha' },
+    { id: 5, x: 5120, y: 600,  name: '6 - Reta Final' }
+  ];
+
+  const goalPortal = { x: 5440, y: 510, w: 54, h: 90 };
+
+  // Plataformas: static, moving, falling
+  function createLevelPlatforms() {
+    return [
+      // === ZONA 1: Aquecimento e precisão básica (x: 0 -> 1250) ===
+      { x: 0,    y: 1040, w: 360, h: 310, type: 'static' },
+      { x: 430,  y: 1000, w: 150, h: 28,  type: 'static' },
+      { x: 650,  y: 950,  w: 130, h: 28,  type: 'static' },
+      { x: 850,  y: 950,  w: 180, h: 28,  type: 'static' }, // com espinho no meio
+      { x: 1100, y: 960,  w: 220, h: 390, type: 'static' }, // Checkpoint 1
+
+      // === ZONA 2: Plataformas que caem e móveis (x: 1320 -> 2350) ===
+      { x: 1390, y: 920,  w: 110, h: 22,  type: 'falling', delay: 0.45, respawn: 2.6 },
+      { x: 1570, y: 880,  w: 110, h: 22,  type: 'falling', delay: 0.45, respawn: 2.6 },
+      { x: 1750, y: 840,  w: 130, h: 24,  type: 'moving', startX: 1750, startY: 840, dx: 140, dy: 0, speed: 1.5 },
+      { x: 2040, y: 840,  w: 110, h: 22,  type: 'falling', delay: 0.4, respawn: 2.5 },
+      { x: 2180, y: 840,  w: 220, h: 510, type: 'static' }, // Checkpoint 2
+
+      // === ZONA 3: Escalada Vertical + Timing (x: 2400 -> 3400) ===
+      { x: 2460, y: 780,  w: 120, h: 24,  type: 'static' },
+      { x: 2640, y: 700,  w: 110, h: 24,  type: 'moving', startX: 2640, startY: 700, dx: 0, dy: -110, speed: 1.7 },
+      { x: 2820, y: 590,  w: 140, h: 24,  type: 'static' },
+      { x: 3020, y: 650,  w: 100, h: 22,  type: 'falling', delay: 0.38, respawn: 2.4 },
+      { x: 3190, y: 900,  w: 240, h: 450, type: 'static' }, // Checkpoint 3 (salto de fé controlado)
+
+      // === ZONA 4: Corredor de Inimigos e Projéteis (x: 3430 -> 4450) ===
+      { x: 3490, y: 880,  w: 260, h: 28,  type: 'static' },
+      { x: 3820, y: 830,  w: 120, h: 24,  type: 'moving', startX: 3820, startY: 830, dx: 130, dy: 0, speed: 1.9 },
+      { x: 4120, y: 780,  w: 110, h: 22,  type: 'falling', delay: 0.35, respawn: 2.3 },
+      { x: 4270, y: 780,  w: 220, h: 570, type: 'static' }, // Checkpoint 4
+
+      // === ZONA 5: Desafio da Chapinha (saltos longos + dash aéreo) (x: 4490 -> 5250) ===
+      { x: 4560, y: 740,  w: 100, h: 22,  type: 'falling', delay: 0.35, respawn: 2.2 },
+      { x: 4770, y: 700,  w: 110, h: 24,  type: 'moving', startX: 4770, startY: 700, dx: 0, dy: -95, speed: 2.1 },
+      { x: 4950, y: 620,  w: 95,  h: 22,  type: 'falling', delay: 0.32, respawn: 2.2 },
+      { x: 5080, y: 660,  w: 210, h: 690, type: 'static' }, // Checkpoint 5
+
+      // === ZONA 6: Reta Final até o Portal (x: 5290 -> 5600) ===
+      { x: 5330, y: 600,  w: 240, h: 750, type: 'static' }
+    ];
+  }
+
+  // Espinhos (triângulos mortais)
+  const spikes = [
+    // Zona 1
+    { x: 915,  y: 932, w: 48, h: 18 },
+    // Zona 2
+    { x: 2270, y: 822, w: 32, h: 18 },
+    // Zona 3
+    { x: 2865, y: 572, w: 48, h: 18 },
+    { x: 3340, y: 882, w: 48, h: 18 },
+    // Zona 4
+    { x: 3600, y: 862, w: 48, h: 18 },
+    // Zona 6
+    { x: 5350, y: 582, w: 48, h: 18 }
+  ];
+
+  // Inimigos previsíveis:
+  // 'patrol': anda de um lado a outro numa plataforma
+  // 'turret': secador de cabelo que dispara jatos de ar quente periódicos
+  function createEnemies() {
+    return [
+      {
+        type: 'patrol',
+        x: 860, y: 914, w: 34, h: 36,
+        minX: 855, maxX: 995, vx: 85, alive: true, respawnTimer: 0
+      },
+      {
+        type: 'patrol',
+        x: 2470, y: 744, w: 34, h: 36,
+        minX: 2465, maxX: 2545, vx: 90, alive: true, respawnTimer: 0
+      },
+      {
+        type: 'turret',
+        x: 2925, y: 552, w: 34, h: 38,
+        dir: -1, fireInterval: 2.1, timer: 0.8, alive: true, respawnTimer: 0
+      },
+      {
+        type: 'patrol',
+        x: 3500, y: 844, w: 34, h: 36,
+        minX: 3495, maxX: 3715, vx: 135, alive: true, respawnTimer: 0
+      },
+      {
+        type: 'turret',
+        x: 4445, y: 742, w: 34, h: 38,
+        dir: -1, fireInterval: 1.85, timer: 0.4, alive: true, respawnTimer: 0
+      },
+      {
+        type: 'patrol',
+        x: 5180, y: 624, w: 34, h: 36,
+        minX: 5165, maxX: 5255, vx: 110, alive: true, respawnTimer: 0
+      }
+    ];
+  }
+
+  let platforms = createLevelPlatforms();
+  let enemies = createEnemies();
+
+  // ==========================================
+  // PROTAGONISTA: RAUL (O SEM SOMBRANCELHA)
+  // ==========================================
+  const raul = {
+    x: checkpoints[0].x,
+    y: checkpoints[0].y,
+    w: 32,
+    h: 54,
+    vx: 0,
+    vy: 0,
+    facing: 1, // 1 = direita, -1 = esquerda
+    onGround: false,
+    coyoteTimer: 0,
+    jumpBufferTimer: 0,
+    dashTimer: 0,
+    dashCooldown: 0,
+    animTime: 0,
+    state: 'idle', // idle, run, jump, fall, dash, dead
+    standingPlatform: null
+  };
+
+  // Câmera
+  const camera = {
+    x: 0,
+    y: 500
+  };
+
+  // ==========================================
+  // FUNÇÕES DE PARTÍCULAS E EFEITOS
+  // ==========================================
+  function spawnParticles(x, y, count, color, speedMin, speedMax, lifeMin, lifeMax, size = 4) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const spd = speedMin + Math.random() * (speedMax - speedMin);
+      particles.push({
+        x,
+        y,
+        vx: Math.cos(angle) * spd,
+        vy: Math.sin(angle) * spd - 40,
+        life: lifeMin + Math.random() * (lifeMax - lifeMin),
+        maxLife: lifeMax,
+        color,
+        size: size * (0.6 + Math.random() * 0.7)
+      });
+    }
+  }
+
+  // ==========================================
+  // REINÍCIO / CHECKPOINT / MORTE
+  // ==========================================
+  function resetPlayerToCheckpoint() {
+    const cp = checkpoints[currentCheckpointIndex];
+    raul.x = cp.x;
+    raul.y = cp.y;
+    raul.vx = 0;
+    raul.vy = 0;
+    raul.facing = 1;
+    raul.onGround = false;
+    raul.coyoteTimer = 0;
+    raul.jumpBufferTimer = 0;
+    raul.dashTimer = 0;
+    raul.dashCooldown = 0;
+    raul.state = 'idle';
+    raul.standingPlatform = null;
+
+    projectiles = [];
+    // Restaura plataformas que caíram
+    platforms.forEach(p => {
+      if (p.type === 'falling') {
+        p.triggered = false;
+        p.fallTimer = 0;
+        p.fallen = false;
+        p.respawnTimer = 0;
+        p.offsetY = 0;
+      }
+    });
+    // Restaura inimigos
+    enemies.forEach(e => {
+      e.alive = true;
+      e.respawnTimer = 0;
+    });
+
+    camera.x = Math.max(0, Math.min(WORLD_WIDTH - canvas.width, raul.x - canvas.width * 0.35));
+    camera.y = Math.max(0, Math.min(WORLD_HEIGHT - canvas.height, raul.y - canvas.height * 0.55));
+  }
+
+  function fullResetGame() {
+    deaths = 0;
+    elapsedTime = 0;
+    currentCheckpointIndex = 0;
+    particles = [];
+    projectiles = [];
+    platforms = createLevelPlatforms();
+    enemies = createEnemies();
+    resetPlayerToCheckpoint();
+    updateHUD();
+  }
+
+  function triggerDeath(reasonText) {
+    if (gameState !== 'PLAYING') return;
+    gameState = 'DEAD';
+    raul.state = 'dead';
+    deaths++;
+    screenShake = 14;
+    sfx.playDeath();
+
+    spawnParticles(raul.x + raul.w / 2, raul.y + raul.h / 2, 34, '#f87171', 80, 340, 0.35, 0.85, 5);
+    spawnParticles(raul.x + raul.w / 2, raul.y + raul.h / 2, 16, '#fbbf24', 60, 260, 0.3, 0.7, 4);
+
+    // Sorteia um dos 3 URLs obrigatórios
+    const chosenUrl = DEATH_URLS[Math.floor(Math.random() * DEATH_URLS.length)];
+
+    // Tenta abrir imediatamente no fluxo da morte
+    let openedWindow = null;
+    try {
+      openedWindow = window.open(chosenUrl, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      openedWindow = null;
+    }
+
+    // Configura fallback visual garantido na tela de Game Over
+    deathReasonEl.textContent = reasonText;
+    deathUrlLink.href = chosenUrl;
+    deathUrlLink.textContent = chosenUrl;
+    deathOpenBtn.href = chosenUrl;
+
+    if (!openedWindow || openedWindow.closed || typeof openedWindow.closed === 'undefined') {
+      popupHint.textContent = 'O navegador bloqueou a abertura automática do pop-up. Clique no botão azul abaixo para abrir o site sorteado!';
+    } else {
+      popupHint.textContent = 'Nova aba aberta automaticamente! Caso não tenha visto, use o botão azul abaixo.';
+    }
+
+    updateHUD();
+    deathOverlay.classList.remove('hidden');
+  }
+
+  function respawnFromDeath() {
+    if (gameState !== 'DEAD') return;
+    deathOverlay.classList.add('hidden');
+    resetPlayerToCheckpoint();
+    gameState = 'PLAYING';
+  }
+
+  function triggerVictory() {
+    if (gameState !== 'PLAYING') return;
+    gameState = 'VICTORY';
+    sfx.playVictory();
+    spawnParticles(raul.x + raul.w / 2, raul.y + raul.h / 2, 60, '#4ade80', 100, 420, 0.5, 1.2, 6);
+    document.getElementById('win-time').textContent = formatTime(elapsedTime);
+    document.getElementById('win-deaths').textContent = deaths;
+    victoryOverlay.classList.remove('hidden');
+  }
+
+  // ==========================================
+  // CONTROLES DE TECLADO E BOTÕES
+  // ==========================================
+  window.addEventListener('keydown', (e) => {
+    const code = e.code;
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(code)) {
+      e.preventDefault();
+    }
+
+    if (gameState === 'DEAD' && (code === 'Space' || code === 'Enter' || code === 'KeyR')) {
+      respawnFromDeath();
+      return;
+    }
+
+    if (code === 'ArrowLeft' || code === 'KeyA') keys.left = true;
+    if (code === 'ArrowRight' || code === 'KeyD') keys.right = true;
+
+    if (code === 'ArrowUp' || code === 'KeyW' || code === 'Space') {
+      if (!keys.up) jumpPressedThisFrame = true;
+      keys.up = true;
+    }
+
+    if (code === 'ShiftLeft' || code === 'ShiftRight' || code === 'KeyK' || code === 'KeyJ') {
+      if (!keys.dash) dashPressedThisFrame = true;
+      keys.dash = true;
+    }
+
+    if (code === 'KeyR' && gameState === 'PLAYING') {
+      resetPlayerToCheckpoint();
+    }
+  });
+
+  window.addEventListener('keyup', (e) => {
+    const code = e.code;
+    if (code === 'ArrowLeft' || code === 'KeyA') keys.left = false;
+    if (code === 'ArrowRight' || code === 'KeyD') keys.right = false;
+    if (code === 'ArrowUp' || code === 'KeyW' || code === 'Space') {
+      keys.up = false;
+      jumpReleasedThisFrame = true;
+    }
+    if (code === 'ShiftLeft' || code === 'ShiftRight' || code === 'KeyK' || code === 'KeyJ') {
+      keys.dash = false;
+    }
+  });
+
+  document.getElementById('btn-start').addEventListener('click', () => {
+    sfx.init();
+    startOverlay.classList.add('hidden');
+    fullResetGame();
+    gameState = 'PLAYING';
+  });
+
+  document.getElementById('btn-respawn').addEventListener('click', () => {
+    sfx.init();
+    respawnFromDeath();
+  });
+
+  document.getElementById('btn-play-again').addEventListener('click', () => {
+    sfx.init();
+    victoryOverlay.classList.add('hidden');
+    fullResetGame();
+    gameState = 'PLAYING';
+  });
+
+  document.getElementById('btn-restart-cp').addEventListener('click', () => {
+    if (gameState === 'PLAYING') {
+      resetPlayerToCheckpoint();
+    }
+  });
+
+  document.getElementById('btn-sound').addEventListener('click', (e) => {
+    const on = sfx.toggle();
+    e.target.textContent = on ? 'Som: ON' : 'Som: OFF';
+  });
+
+  // ==========================================
+  // AUXILIARES DE COLISÃO E TEMPO
+  // ==========================================
+  function rectsOverlap(a, b) {
+    return (
+      a.x < b.x + b.w &&
+      a.x + a.w > b.x &&
+      a.y < b.y + b.h &&
+      a.y + a.h > b.y
+    );
+  }
+
+  function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    const d = Math.floor((sec * 10) % 10);
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${d}`;
+  }
+
+  function updateHUD() {
+    hudDeaths.textContent = deaths;
+    hudCp.textContent = `${currentCheckpointIndex + 1} / ${checkpoints.length}`;
+    hudTime.textContent = formatTime(elapsedTime);
+    const pct = Math.max(0, Math.min(100, Math.round((raul.x / goalPortal.x) * 100)));
+    hudPct.textContent = `${pct}%`;
+    progressBar.style.width = `${pct}%`;
+
+    if (raul.dashCooldown <= 0) {
+      dashBarFill.style.width = '100%';
+      dashStatus.textContent = 'PRONTA (220°C)';
+      dashStatus.style.color = '#fde047';
+    } else {
+      const ratio = Math.max(0, Math.min(1, 1 - raul.dashCooldown / DASH_COOLDOWN));
+      dashBarFill.style.width = `${Math.round(ratio * 100)}%`;
+      dashStatus.textContent = 'AQUECENDO...';
+      dashStatus.style.color = '#94a3b8';
+    }
+  }
+
+  // ==========================================
+  // ATUALIZAÇÃO DA LÓGICA (FIXED TIMESTEP)
+  // ==========================================
+  function update(dt) {
+    // Partículas continuam animando mesmo na tela de morte
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 450 * dt;
+      p.life -= dt;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    if (screenShake > 0) {
+      screenShake = Math.max(0, screenShake - 45 * dt);
+    }
+
+    if (gameState !== 'PLAYING') {
+      jumpPressedThisFrame = false;
+      jumpReleasedThisFrame = false;
+      dashPressedThisFrame = false;
+      return;
+    }
+
+    elapsedTime += dt;
+    raul.animTime += dt;
+
+    // 1. Atualiza plataformas móveis e que caem
+    platforms.forEach(p => {
+      p.prevX = p.x;
+      p.prevY = p.y;
+
+      if (p.type === 'moving') {
+        p.phase = (p.phase || 0) + dt * p.speed;
+        p.x = p.startX + Math.sin(p.phase) * p.dx;
+        p.y = p.startY + Math.sin(p.phase) * p.dy;
+      } else if (p.type === 'falling') {
+        if (p.fallen) {
+          p.respawnTimer -= dt;
+          if (p.respawnTimer <= 0) {
+            p.fallen = false;
+            p.triggered = false;
+            p.fallTimer = 0;
+            p.offsetY = 0;
+          }
+        } else if (p.triggered) {
+          p.fallTimer -= dt;
+          if (p.fallTimer <= 0) {
+            p.fallen = true;
+            p.respawnTimer = p.respawn;
+            spawnParticles(p.x + p.w / 2, p.y + p.h / 2, 10, '#94a3b8', 30, 120, 0.25, 0.5, 4);
+          }
+        }
+      }
+    });
+
+    // Acompanha movimento da plataforma onde Raul está pisando
+    if (raul.onGround && raul.standingPlatform && !raul.standingPlatform.fallen) {
+      const sp = raul.standingPlatform;
+      raul.x += (sp.x - sp.prevX);
+      raul.y += (sp.y - sp.prevY);
+    }
+
+    // 2. Timers de pulo e chapinha
+    if (raul.onGround) {
+      raul.coyoteTimer = COYOTE_TIME;
+    } else {
+      raul.coyoteTimer = Math.max(0, raul.coyoteTimer - dt);
+    }
+
+    if (jumpPressedThisFrame) {
+      raul.jumpBufferTimer = JUMP_BUFFER_TIME;
+    } else {
+      raul.jumpBufferTimer = Math.max(0, raul.jumpBufferTimer - dt);
+    }
+
+    if (raul.dashCooldown > 0) {
+      raul.dashCooldown = Math.max(0, raul.dashCooldown - dt);
+    }
+
+    // 3. Disparo do Impulso Térmico da Chapinha
+    if (dashPressedThisFrame && raul.dashCooldown <= 0 && raul.dashTimer <= 0) {
+      raul.dashTimer = DASH_DURATION;
+      raul.dashCooldown = DASH_COOLDOWN;
+      raul.vy = 0;
+      raul.vx = raul.facing * DASH_SPEED;
+      sfx.playDash();
+      screenShake = 5;
+      spawnParticles(
+        raul.x + raul.w / 2,
+        raul.y + raul.h * 0.55,
+        16,
+        '#fb923c',
+        60,
+        240,
+        0.18,
+        0.4,
+        4
+      );
+    }
+
+    // 4. Movimentação horizontal e vertical
+    if (raul.dashTimer > 0) {
+      raul.dashTimer -= dt;
+      raul.vx = raul.facing * DASH_SPEED;
+      raul.vy = 0;
+      if (Math.random() < 0.75) {
+        spawnParticles(
+          raul.x + raul.w / 2 - raul.facing * 12,
+          raul.y + raul.h * 0.55,
+          2,
+          '#fde047',
+          20,
+          90,
+          0.12,
+          0.25,
+          3.5
+        );
+      }
+    } else {
+      const moveDir = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+      if (moveDir !== 0) {
+        raul.facing = moveDir;
+        const accel = raul.onGround ? MOVE_ACCEL : AIR_ACCEL;
+        raul.vx += moveDir * accel * dt;
+        if (Math.abs(raul.vx) > MAX_RUN_SPEED) {
+          raul.vx = moveDir * MAX_RUN_SPEED;
+        }
+      } else {
+        const decel = raul.onGround ? MOVE_DECEL : AIR_ACCEL * 0.85;
+        if (Math.abs(raul.vx) <= decel * dt) {
+          raul.vx = 0;
+        } else {
+          raul.vx -= Math.sign(raul.vx) * decel * dt;
+        }
+      }
+
+      // Pulo com Coyote Time + Jump Buffering
+      if (raul.jumpBufferTimer > 0 && raul.coyoteTimer > 0) {
+        raul.vy = JUMP_VELOCITY;
+        raul.onGround = false;
+        raul.coyoteTimer = 0;
+        raul.jumpBufferTimer = 0;
+        raul.standingPlatform = null;
+        sfx.playJump();
+        spawnParticles(raul.x + raul.w / 2, raul.y + raul.h, 8, '#cbd5e1', 30, 110, 0.15, 0.3, 3);
+      }
+
+      // Pulo variável (soltar botão corta velocidade ascendente)
+      if (jumpReleasedThisFrame && raul.vy < -220) {
+        raul.vy *= 0.52;
+      }
+
+      // Gravidade
+      raul.vy = Math.min(MAX_FALL_SPEED, raul.vy + GRAVITY * dt);
+    }
+
+    // 5. Colisão Horizontal
+    raul.x += raul.vx * dt;
+    if (raul.x < 0) {
+      raul.x = 0;
+      raul.vx = 0;
+    }
+    if (raul.x + raul.w > WORLD_WIDTH) {
+      raul.x = WORLD_WIDTH - raul.w;
+      raul.vx = 0;
+    }
+
+    for (const p of platforms) {
+      if (p.type === 'falling' && p.fallen) continue;
+      if (rectsOverlap(raul, p)) {
+        if (raul.vx > 0) {
+          raul.x = p.x - raul.w;
+          raul.vx = 0;
+        } else if (raul.vx < 0) {
+          raul.x = p.x + p.w;
+          raul.vx = 0;
+        }
+      }
+    }
+
+    // 6. Colisão Vertical
+    const wasOnGround = raul.onGround;
+    raul.onGround = false;
+    raul.standingPlatform = null;
+    raul.y += raul.vy * dt;
+
+    for (const p of platforms) {
+      if (p.type === 'falling' && p.fallen) continue;
+      if (rectsOverlap(raul, p)) {
+        if (raul.vy >= 0) {
+          raul.y = p.y - raul.h;
+          raul.vy = 0;
+          raul.onGround = true;
+          raul.standingPlatform = p;
+          if (!wasOnGround) {
+            spawnParticles(raul.x + raul.w / 2, raul.y + raul.h, 5, '#94a3b8', 20, 80, 0.12, 0.24, 3);
+          }
+          if (p.type === 'falling' && !p.triggered) {
+            p.triggered = true;
+            p.fallTimer = p.delay;
+          }
+        } else if (raul.vy < 0) {
+          raul.y = p.y + p.h;
+          raul.vy = 0;
+        }
+      }
+    }
+
+    // Define estado de animação do Raul
+    if (raul.dashTimer > 0) {
+      raul.state = 'dash';
+    } else if (!raul.onGround) {
+      raul.state = raul.vy < 0 ? 'jump' : 'fall';
+    } else if (Math.abs(raul.vx) > 18) {
+      raul.state = 'run';
+    } else {
+      raul.state = 'idle';
+    }
+
+    // 7. Queda no abismo
+    if (raul.y > WORLD_HEIGHT + 40) {
+      triggerDeath('Raul caiu no abismo sem sobrancelhas!');
+      return;
+    }
+
+    // 8. Checkpoints
+    checkpoints.forEach((cp, idx) => {
+      if (idx > currentCheckpointIndex) {
+        const cpBox = { x: cp.x - 16, y: cp.y - 36, w: 48, h: 90 };
+        if (rectsOverlap(raul, cpBox)) {
+          currentCheckpointIndex = idx;
+          sfx.playCheckpoint();
+          spawnParticles(cp.x + 8, cp.y, 24, '#38bdf8', 60, 220, 0.3, 0.7, 4.5);
+        }
+      }
+    });
+
+    // 9. Espinhos
+    for (const s of spikes) {
+      // Hitbox ligeiramente justa para evitar frustração
+      const hitbox = { x: s.x + 5, y: s.y + 4, w: s.w - 10, h: s.h - 4 };
+      if (rectsOverlap(raul, hitbox)) {
+        triggerDeath('Raul pisou nos espinhos afiados!');
+        return;
+      }
+    }
+
+    // 10. Inimigos & Projéteis
+    // Hitbox da chapinha ativa durante o dash
+    const chapinhaHitbox = raul.dashTimer > 0 ? {
+      x: raul.facing === 1 ? raul.x + raul.w - 4 : raul.x - 28,
+      y: raul.y + 12,
+      w: 32,
+      h: 34
+    } : null;
+
+    for (const e of enemies) {
+      if (!e.alive) continue;
+
+      if (e.type === 'patrol') {
+        e.x += e.vx * dt;
+        if (e.x <= e.minX) {
+          e.x = e.minX;
+          e.vx = Math.abs(e.vx);
+        } else if (e.x + e.w >= e.maxX) {
+          e.x = e.maxX - e.w;
+          e.vx = -Math.abs(e.vx);
+        }
+      } else if (e.type === 'turret') {
+        e.timer -= dt;
+        if (e.timer <= 0) {
+          e.timer = e.fireInterval;
+          // Dispara jato de vento quente somente se próximo da câmera
+          if (Math.abs(e.x - raul.x) < 950) {
+            projectiles.push({
+              x: e.dir === -1 ? e.x - 14 : e.x + e.w,
+              y: e.y + 12,
+              w: 18,
+              h: 12,
+              vx: e.dir * 290,
+              life: 3.2
+            });
+          }
+        }
+      }
+
+      // Se Raul acertar com o Dash da Chapinha, elimina o adversário!
+      if (chapinhaHitbox && rectsOverlap(chapinhaHitbox, e)) {
+        e.alive = false;
+        sfx.playEnemyBurn();
+        screenShake = 7;
+        spawnParticles(e.x + e.w / 2, e.y + e.h / 2, 22, '#fb923c', 70, 260, 0.25, 0.6, 4.5);
+        continue;
+      }
+
+      // Pular na cabeça de inimigo de patrulha também derrota ele
+      const enemyBox = { x: e.x + 3, y: e.y + 3, w: e.w - 6, h: e.h - 4 };
+      if (rectsOverlap(raul, enemyBox)) {
+        if (e.type === 'patrol' && raul.vy > 0 && (raul.y + raul.h - raul.vy * dt) <= e.y + 14) {
+          e.alive = false;
+          raul.vy = JUMP_VELOCITY * 0.72;
+          sfx.playEnemyBurn();
+          spawnParticles(e.x + e.w / 2, e.y + e.h / 2, 18, '#fbbf24', 60, 220, 0.25, 0.55, 4);
+        } else {
+          triggerDeath('Raul foi atingido por um adversário!');
+          return;
+        }
+      }
+    }
+
+    // Atualiza projéteis de ar quente
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+      const pr = projectiles[i];
+      pr.x += pr.vx * dt;
+      pr.life -= dt;
+      if (pr.life <= 0) {
+        projectiles.splice(i, 1);
+        continue;
+      }
+      if (chapinhaHitbox && rectsOverlap(chapinhaHitbox, pr)) {
+        projectiles.splice(i, 1);
+        spawnParticles(pr.x, pr.y, 8, '#38bdf8', 40, 140, 0.15, 0.3, 3);
+        continue;
+      }
+      if (rectsOverlap(raul, pr)) {
+        triggerDeath('Raul foi atingido por uma rajada térmica!');
+        return;
+      }
+    }
+
+    // 11. Portal de Vitória
+    if (rectsOverlap(raul, goalPortal)) {
+      triggerVictory();
+      return;
+    }
+
+    // 12. Câmera suave seguindo Raul com lookahead
+    const targetCamX = raul.x + raul.facing * 90 - canvas.width * 0.42;
+    const targetCamY = raul.y - canvas.height * 0.56;
+    const clampedX = Math.max(0, Math.min(WORLD_WIDTH - canvas.width, targetCamX));
+    const clampedY = Math.max(0, Math.min(WORLD_HEIGHT - canvas.height, targetCamY));
+
+    camera.x += (clampedX - camera.x) * Math.min(1, dt * 7.5);
+    camera.y += (clampedY - camera.y) * Math.min(1, dt * 6.0);
+
+    jumpPressedThisFrame = false;
+    jumpReleasedThisFrame = false;
+    dashPressedThisFrame = false;
+
+    updateHUD();
+  }
+
+  // ==========================================
+  // RENDERIZAÇÃO (CANVAS 2D)
+  // ==========================================
+  function drawBackground() {
+    // Céu noturno urbano estilizado
+    const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    grad.addColorStop(0, '#090d16');
+    grad.addColorStop(0.55, '#131c2e');
+    grad.addColorStop(1, '#1c263b');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Lua / Halo decorativo em parallax lento
+    const moonX = 980 - camera.x * 0.04;
+    const moonY = 140 - camera.y * 0.03;
+    ctx.fillStyle = 'rgba(251, 191, 36, 0.12)';
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, 68, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fef3c7';
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, 34, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Silhuetas de prédios em parallax
+    ctx.fillStyle = '#0f1624';
+    for (let i = 0; i < 28; i++) {
+      const bx = i * 260 - (camera.x * 0.18) % 260 - 120;
+      const bh = 160 + ((i * 73) % 190);
+      const by = canvas.height - bh + 40;
+      ctx.fillRect(bx, by, 190, bh);
+    }
+
+    ctx.fillStyle = '#151f32';
+    for (let i = 0; i < 24; i++) {
+      const bx = i * 310 - (camera.x * 0.32) % 310 - 150;
+      const bh = 120 + ((i * 97) % 160);
+      const by = canvas.height - bh + 60;
+      ctx.fillRect(bx, by, 210, bh);
+    }
+  }
+
+  function drawPlatforms() {
+    for (const p of platforms) {
+      if (p.type === 'falling' && p.fallen) continue;
+
+      let drawX = p.x;
+      let drawY = p.y;
+      if (p.type === 'falling' && p.triggered) {
+        drawX += (Math.random() - 0.5) * 5;
+      }
+
+      if (p.type === 'static') {
+        // Bloco principal
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(drawX, drawY, p.w, p.h);
+        // Topo destacado
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(drawX, drawY, p.w, 6);
+        // Borda sutil
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(drawX, drawY, p.w, p.h);
+      } else if (p.type === 'moving') {
+        ctx.fillStyle = '#312e81';
+        ctx.fillRect(drawX, drawY, p.w, p.h);
+        ctx.fillStyle = '#a855f7';
+        ctx.fillRect(drawX, drawY, p.w, 5);
+        ctx.strokeStyle = '#6366f1';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(drawX, drawY, p.w, p.h);
+      } else if (p.type === 'falling') {
+        ctx.fillStyle = p.triggered ? '#7f1d1d' : '#451a03';
+        ctx.fillRect(drawX, drawY, p.w, p.h);
+        ctx.fillStyle = p.triggered ? '#f87171' : '#f59e0b';
+        ctx.fillRect(drawX, drawY, p.w, 5);
+        // Rachaduras visuais
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(drawX + p.w * 0.3, drawY + 5);
+        ctx.lineTo(drawX + p.w * 0.42, drawY + p.h - 3);
+        ctx.moveTo(drawX + p.w * 0.7, drawY + 5);
+        ctx.lineTo(drawX + p.w * 0.62, drawY + p.h - 3);
+        ctx.stroke();
+      }
+    }
+  }
+
+  function drawSpikes() {
+    for (const s of spikes) {
+      const count = Math.floor(s.w / 12);
+      const step = s.w / count;
+      for (let i = 0; i < count; i++) {
+        const sx = s.x + i * step;
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.moveTo(sx, s.y + s.h);
+        ctx.lineTo(sx + step / 2, s.y);
+        ctx.lineTo(sx + step, s.y + s.h);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#fca5a5';
+        ctx.beginPath();
+        ctx.moveTo(sx + step * 0.35, s.y + s.h);
+        ctx.lineTo(sx + step / 2, s.y + 3);
+        ctx.lineTo(sx + step * 0.55, s.y + s.h);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+  }
+
+  function drawCheckpointsAndGoal() {
+    checkpoints.forEach((cp, idx) => {
+      const active = idx <= currentCheckpointIndex;
+      // Haste
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(cp.x + 12, cp.y - 34, 4, 94);
+      // Bandeira
+      ctx.fillStyle = active ? '#22c55e' : '#475569';
+      ctx.beginPath();
+      ctx.moveTo(cp.x + 16, cp.y - 32);
+      ctx.lineTo(cp.x + 48, cp.y - 20);
+      ctx.lineTo(cp.x + 16, cp.y - 8);
+      ctx.closePath();
+      ctx.fill();
+
+      if (active) {
+        ctx.fillStyle = 'rgba(34, 197, 94, 0.25)';
+        ctx.beginPath();
+        ctx.arc(cp.x + 14, cp.y - 20, 18 + Math.sin(elapsedTime * 5) * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+
+    // Portal Final
+    const gx = goalPortal.x;
+    const gy = goalPortal.y;
+    const gw = goalPortal.w;
+    const gh = goalPortal.h;
+
+    const portalGrad = ctx.createLinearGradient(gx, gy, gx + gw, gy + gh);
+    portalGrad.addColorStop(0, '#10b981');
+    portalGrad.addColorStop(0.5, '#38bdf8');
+    portalGrad.addColorStop(1, '#fbbf24');
+
+    ctx.fillStyle = portalGrad;
+    ctx.beginPath();
+    ctx.roundRect(gx, gy, gw, gh, 24);
+    ctx.fill();
+
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('CHEGADA', gx + gw / 2, gy - 10);
+  }
+
+  function drawEnemiesAndProjectiles() {
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      if (e.type === 'patrol') {
+        // Robô-Navalha de Sobrancelha (inimigo temático)
+        ctx.fillStyle = '#dc2626';
+        ctx.beginPath();
+        ctx.roundRect(e.x, e.y + 6, e.w, e.h - 6, 8);
+        ctx.fill();
+
+        // Lâmina superior giratória
+        ctx.fillStyle = '#e2e8f0';
+        const bladeOffset = Math.sin(elapsedTime * 22) * 3;
+        ctx.fillRect(e.x - 3 + bladeOffset, e.y, e.w + 6, 6);
+
+        // Olho raivoso com monocelha gigante (arqui-inimigo do Raul!)
+        ctx.fillStyle = '#fef08a';
+        ctx.fillRect(e.x + 7, e.y + 14, 20, 8);
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(e.x + 5, e.y + 10, 24, 5); // monocelha grossa!
+      } else if (e.type === 'turret') {
+        // Secador Industrial fixo
+        ctx.fillStyle = '#475569';
+        ctx.fillRect(e.x + 8, e.y + 16, 18, 22);
+        ctx.fillStyle = '#f97316';
+        ctx.beginPath();
+        ctx.roundRect(e.x, e.y + 2, e.w, 18, 6);
+        ctx.fill();
+        // Bocal
+        ctx.fillStyle = '#1e293b';
+        const nozzleX = e.dir === -1 ? e.x - 6 : e.x + e.w - 2;
+        ctx.fillRect(nozzleX, e.y + 5, 8, 12);
+      }
+    }
+
+    // Projéteis de ar quente
+    for (const pr of projectiles) {
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.roundRect(pr.x, pr.y, pr.w, pr.h, 6);
+      ctx.fill();
+      ctx.fillStyle = '#e0f2fe';
+      ctx.fillRect(pr.x + 3, pr.y + 3, pr.w - 6, 4);
+    }
+  }
+
+  // ==========================================
+  // DESENHO DO PROTAGONISTA RAUL (BASEADO NA FOTO)
+  // - Cabelo preto liso repartido lateralmente
+  // - Rosto leste-asiático/latino-asiático fiel à foto
+  // - TESTA COMPLETAMENTE LISA SEM SOBRANCELHAS
+  // - Óculos retangulares escuros sobre os olhos
+  // - Fones de ouvido brancos com fio pendurado
+  // - Chapinha térmica preta com placas laranja incandescentes na mão
+  // ==========================================
+  function drawRaul() {
+    ctx.save();
+    const cx = raul.x + raul.w / 2;
+    const cy = raul.y + raul.h / 2;
+
+    // Animação de corrida/pulo
+    let bobY = 0;
+    let legSwing = 0;
+    let tilt = 0;
+
+    if (raul.state === 'run') {
+      bobY = Math.abs(Math.sin(raul.animTime * 16)) * -3;
+      legSwing = Math.sin(raul.animTime * 16) * 7;
+      tilt = raul.facing * 0.07;
+    } else if (raul.state === 'jump') {
+      legSwing = 5;
+      tilt = raul.facing * -0.06;
+    } else if (raul.state === 'fall') {
+      legSwing = -4;
+      tilt = raul.facing * 0.08;
+    } else if (raul.state === 'dash') {
+      tilt = raul.facing * 0.24;
+    } else {
+      bobY = Math.sin(raul.animTime * 3.5) * 1.2;
+    }
+
+    ctx.translate(cx, cy + bobY);
+    ctx.rotate(tilt);
+
+    // Aura térmica quando o dash da chapinha está ativo
+    if (raul.dashTimer > 0) {
+      ctx.fillStyle = 'rgba(249, 115, 22, 0.32)';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 28, 34, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // --- PERNAS E TÊNIS ---
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    // Perna esquerda
+    ctx.beginPath();
+    ctx.moveTo(-5, 12);
+    ctx.lineTo(-6 - legSwing, 24);
+    ctx.stroke();
+    // Perna direita
+    ctx.beginPath();
+    ctx.moveTo(5, 12);
+    ctx.lineTo(6 + legSwing, 24);
+    ctx.stroke();
+
+    // Tênis
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(-10 - legSwing, 22, 9, 4);
+    ctx.fillRect(2 + legSwing, 22, 9, 4);
+
+    // --- TRONCO (Estilo camiseta regata/casual como na referência) ---
+    ctx.fillStyle = '#d4a373'; // Tom de pele fiel à foto
+    ctx.beginPath();
+    ctx.roundRect(-10, -3, 20, 17, 5);
+    ctx.fill();
+
+    // Regata preta estilizada para contraste nítido no jogo
+    ctx.fillStyle = '#18181b';
+    ctx.beginPath();
+    ctx.roundRect(-9, -1, 18, 15, 3);
+    ctx.fill();
+
+    // Fios dos fones de ouvido brancos descendo no peito (detalhe da foto!)
+    ctx.strokeStyle = '#f8fafc';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(-5, -5);
+    ctx.quadraticCurveTo(-4, 5, 0, 11);
+    ctx.moveTo(5, -5);
+    ctx.quadraticCurveTo(4, 5, 0, 11);
+    ctx.stroke();
+
+    // --- CABEÇA DO RAUL ---
+    const headY = -16;
+    // Rosto oval
+    ctx.fillStyle = '#d4a373';
+    ctx.beginPath();
+    ctx.ellipse(0, headY, 12, 13.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Orelha com fone branco intra-auricular
+    const earX = -raul.facing * 11;
+    ctx.fillStyle = '#c69262';
+    ctx.beginPath();
+    ctx.arc(earX, headY + 1, 2.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(earX, headY + 1, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Cabelo preto liso com repartição lateral igual à foto
+    ctx.fillStyle = '#0f1115';
+    ctx.beginPath();
+    ctx.arc(0, headY - 2, 12.6, Math.PI * 1.02, Math.PI * 1.98);
+    // Franja caída de lado
+    if (raul.facing === 1) {
+      ctx.quadraticCurveTo(12, headY - 7, 3, headY - 8);
+      ctx.quadraticCurveTo(-5, headY - 10, -12.5, headY - 2);
+    } else {
+      ctx.quadraticCurveTo(5, headY - 10, -3, headY - 8);
+      ctx.quadraticCurveTo(-12, headY - 7, -12.5, headY - 2);
+    }
+    ctx.fill();
+
+    // --- ROSTO: TESTA LISA SEM SOBRANCELHAS + ÓCULOS ---
+    const eyeCenterX = raul.facing * 2.5;
+    const eyeY = headY - 0.5;
+
+    // Espaço da testa deliberadamente limpo (ZERO sobrancelhas!)
+    // Olhos expressivos leste-asiáticos
+    ctx.fillStyle = '#111827';
+    ctx.fillRect(eyeCenterX - 5.5, eyeY - 1, 3.5, 2.2);
+    ctx.fillRect(eyeCenterX + 2.5, eyeY - 1, 3.5, 2.2);
+
+    // Óculos retangulares escuros (marca registrada da foto)
+    ctx.strokeStyle = '#1f242d';
+    ctx.lineWidth = 1.8;
+    ctx.fillStyle = 'rgba(186, 230, 253, 0.22)'; // leve reflexo azulado nas lentes
+    // Lente esquerda
+    ctx.fillRect(eyeCenterX - 7.5, eyeY - 3.5, 6.8, 5.5);
+    ctx.strokeRect(eyeCenterX - 7.5, eyeY - 3.5, 6.8, 5.5);
+    // Lente direita
+    ctx.fillRect(eyeCenterX + 1.2, eyeY - 3.5, 6.8, 5.5);
+    ctx.strokeRect(eyeCenterX + 1.2, eyeY - 3.5, 6.8, 5.5);
+    // Ponte dos óculos
+    ctx.beginPath();
+    ctx.moveTo(eyeCenterX - 0.7, eyeY - 1.5);
+    ctx.lineTo(eyeCenterX + 1.2, eyeY - 1.5);
+    ctx.stroke();
+
+    // Nariz e boca
+    ctx.fillStyle = '#b98354';
+    ctx.fillRect(eyeCenterX - 0.5, eyeY + 2.5, 2, 2.5);
+
+    ctx.fillStyle = '#9f5f58';
+    ctx.beginPath();
+    ctx.ellipse(eyeCenterX + 0.5, eyeY + 7.2, 3.2, 1.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // --- BRAÇO E CHAPINHA DE CABELO NA MÃO ---
+    const handX = raul.facing * 12;
+    const handY = 4;
+
+    // Braço segurando a chapinha
+    ctx.strokeStyle = '#d4a373';
+    ctx.lineWidth = 4.5;
+    ctx.beginPath();
+    ctx.moveTo(raul.facing * 6, 1);
+    ctx.lineTo(handX, handY);
+    ctx.stroke();
+
+    // Desenho da Chapinha (Prancha alisadora)
+    ctx.save();
+    ctx.translate(handX, handY);
+    ctx.rotate(raul.facing * -0.25);
+
+    const ironLen = raul.dashTimer > 0 ? 24 : 18;
+    const ironDir = raul.facing;
+
+    // Corpo preto da chapinha (duas hastes em V fechado)
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, -4, ironDir * ironLen, 3.2);
+    ctx.fillRect(0, 0.8, ironDir * ironLen, 3.2);
+
+    // Placas térmicas incandescentes (220°C!)
+    const heatGlow = raul.dashCooldown <= 0 ? '#fb923c' : '#64748b';
+    ctx.fillStyle = raul.dashTimer > 0 ? '#fef08a' : heatGlow;
+    ctx.fillRect(ironDir * 6, -1.2, ironDir * (ironLen - 7), 2.4);
+
+    // Brilho térmico na ponta quando pronta
+    if (raul.dashCooldown <= 0) {
+      ctx.fillStyle = 'rgba(251, 146, 60, 0.35)';
+      ctx.beginPath();
+      ctx.arc(ironDir * ironLen, 0, 6 + Math.sin(elapsedTime * 10) * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+    ctx.restore();
+  }
+
+  function drawParticles() {
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function render() {
+    drawBackground();
+
+    ctx.save();
+    const shakeX = screenShake > 0 ? (Math.random() - 0.5) * screenShake : 0;
+    const shakeY = screenShake > 0 ? (Math.random() - 0.5) * screenShake : 0;
+    ctx.translate(-Math.round(camera.x + shakeX), -Math.round(camera.y + shakeY));
+
+    drawPlatforms();
+    drawSpikes();
+    drawCheckpointsAndGoal();
+    drawEnemiesAndProjectiles();
+    if (raul.state !== 'dead') {
+      drawRaul();
+    }
+    drawParticles();
+
+    ctx.restore();
+  }
+
+  // ==========================================
+  // LOOP PRINCIPAL (60 FPS ESTÁVEL)
+  // ==========================================
+  let lastTime = performance.now();
+  function gameLoop(now) {
+    const dt = Math.min(0.033, (now - lastTime) / 1000);
+    lastTime = now;
+
+    update(dt);
+    render();
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  updateHUD();
+  requestAnimationFrame(gameLoop);
+})();
+</script>
+</body>
+</html>
